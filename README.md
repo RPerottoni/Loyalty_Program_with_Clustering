@@ -26,10 +26,18 @@ whose should develop a solution and a report to respond the marketing queries be
 ![image](reports/figures/crispds.jpg)
 
 To sort this business problem, were followed the below approach:
-* One notebook for the [Exploratory Data Analysis](https://www.kaggle.com/datasets/carrie1/ecommerce-data)
-* One notebook for the [RFM Matrix](https://www.kaggle.com/datasets/carrie1/ecommerce-data)
-* One notebook for the [Machine Learning Models](https://www.kaggle.com/datasets/carrie1/ecommerce-data)
+* One notebook for the [Exploratory Data Analysis](https://github.com/RPerottoni/Loyalty_Program_with_Clustering/blob/main/notebooks/c01_rp_eda.ipynb), Please note that, due to the file size, it was not possible to include it along with the graphs.
+However, you should be able to reproduce everything on your system.
+* One notebook for the [RFM Matrix](https://github.com/RPerottoni/Loyalty_Program_with_Clustering/blob/main/notebooks/c01_rp_RFM.ipynb)
+* One notebook for the [Machine Learning Models](https://github.com/RPerottoni/Loyalty_Program_with_Clustering/blob/main/notebooks/c01_rp_ml.ipynb)
 
+To reproduce the project on your system, please follow the steps below:
+
+- Clone the repository to your computer.
+- Create and activate a new virtual environment.
+- Install the required libraries by running: **pip install -r requirements.txt**
+
+After completing these steps, you should be able to successfully reproduce the project on your machine.
 
 ## 2.1 Data Processing
 
