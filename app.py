@@ -1,179 +1,207 @@
+"""
+Streamlit Dashboard for Customer Segmentation Analysis
+
+This dashboard provides insights into customer clusters identified by a K-Means model.
+It includes high-level metrics, visualizations, and filtered views of customer segments.
+
+Key Features:
+- Overall customer statistics
+- Cluster distribution treemap
+- Revenue and customer quantity analysis
+- Interactive cluster filtering
+- Time-based and geographical analysis
+"""
+
 import pandas as pd
 import streamlit as st
 import plotly.express as px
+from numerize.numerize import numerize
 
-st.set_page_config( layout= 'wide' )
+# Constants
+CLUSTER_NAMES = [
+    'Insiders', 'Champions', 'Loyalists', 'Big Spenders', 'Potential Loyalists',
+    'New Customers', 'Promising', 'Active Customers', 'High Value Newcomers',
+    'Rising Stars', 'Occasional Buyers', 'Need Attention', 'About to Sleep',
+    'Hibernating', 'At Risk', 'Lost Champions', 'Price Sensitive', 'One-Timers',
+    'Bargain Hunters', 'Low Value Customers', 'Churned', 'Ghosts'
+]
+WEEKDAY_MAP = {
+    0: 'Monday', 1: 'Sunday', 2: 'Tuesday', 3: 'Wednesday',
+    4: 'Thursday', 5: 'Friday', 6: 'Saturday'
+}
+THEME_PLOTLY = None
+TREEMAP_COLORS = {
+    'highlight': "#FF8C42",
+    'base': "#D3D3D3"
+}
+
+# Configure page settings
+st.set_page_config(
+    page_title="Insiders Dashboard - ML",
+    page_icon="🌍",
+    layout="wide"
+)
 
 @st.cache_data
-def get_data(path):
+def get_data(path: str, path_o: str) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Load and cache processed data files."""
     df = pd.read_csv(path)
-    return df
+    df_oml = pd.read_csv(path_o)
+    return df, df_oml
 
-###### TITLES AND TEXT ######
+def display_main_metrics(df: pd.DataFrame) -> None:
+    """Display key customer metrics in a 6-column layout."""
+    metrics = {
+        'Customers': df['customer_id'].count(),
+        'Revenue': df['gross_revenue'].sum(),
+        'Avg Recency': df['recency_days'].mean(),
+        'Avg Frequency': df['frequency'].mean(),
+        'Invoices': df['qty_invoices'].sum(),
+        'Products': df['qty_prod_purchased'].sum()
+    }
 
-st.title('All in One Place: High Value Customer Identification ')
+    cols = st.columns(6)
+    for col, (label, value) in zip(cols, metrics.items()):
+        # Handle NaN/None values
+        formatted_value = numerize(float(value)) if pd.notnull(value) else 'N/A'
+        col.metric(label=label, value=formatted_value)
 
-st.write('This page will show the details of the clusters formed by K-Means.')
-st.divider()
-
-st.header('A general overview of customers')
-
-
-###### FUNCTION FOR EDA ######
-def eda (df):
-
-    # Customer Statistics
-    qty_customers = df['customer_id'].count()
-    revenue       = df['gross_revenue'].sum()
-    recency       = df['recency_days'].mean()
-    frequency     = df['frequency'].mean()
-
-
-    col1, col2, col3, col4 = st.columns(4)
+def create_treemap(df: pd.DataFrame) -> px.treemap:
+    """Create cluster distribution treemap with highlighted Insiders cluster."""
+    df_treemap = df.groupby('cluster')['customer_id'].count().reset_index()
     
-    col1.metric(label="Quantity of Customers", value=qty_customers)
-    col2.metric(label="Gross Revenue", value=f"$ {revenue:,.2f}")
-    col3.metric(label="Avg Recency", value=f" {recency:,.2f}")
-    col4.metric(label="Avg Frequency", value=f"{frequency:,.2f}")
+    color_map = {
+        cluster: TREEMAP_COLORS['highlight'] if cluster == "Insiders" else TREEMAP_COLORS['base']
+        for cluster in df_treemap['cluster']
+    }
 
-    st.divider()
-    
-           
-    ##### cluster tree map #####
-    df_treemap = df.groupby('cluster').agg({'customer_id': lambda x: len(x)}).reset_index()
-    
-    # Treemap
-    treemap_fig = px.treemap(
+    fig = px.treemap(
         df_treemap,
         path=['cluster'],
         values='customer_id',
+        color='cluster',
+        color_discrete_map=color_map,
         width=1100,
-        height=900,
-        color='cluster')
-    
-    # Layout
-    treemap_fig.update_layout(
-        title=dict(text='SEGMENT DISTRIBUTION', font=dict(size=40)),
-        title_x=0.4,
-        plot_bgcolor='white'
+        height=900
     )
 
-    # Text
-    treemap_fig.update_traces(
+    fig.update_layout(
+        title=dict(text='Segment Distribution', font=dict(size=30)),
+        title_x=0.5,
+        margin=dict(t=50, l=25, r=25, b=25)
+    )
+    
+    fig.update_traces(
         textinfo='label+value+percent root',
         textfont=dict(size=20),
-        textposition='middle center'
+        marker=dict(line=dict(width=2, color='white')))
+    
+    return fig
+
+def create_bar_chart(df: pd.DataFrame, x: str, y: str, title: str) -> px.bar:
+    """Helper function to create standardized bar charts."""
+    fig = px.bar(
+        df,
+        x=x,
+        y=y,
+        color=y,
+        text_auto='.2s',
+        title=title
     )
-        
-    st.plotly_chart(treemap_fig)
     
-
-     ##### Bar Charts #####
-    c1, c2 = st.columns((1,1))
-
-    # Revenue
-    revenue = df[['cluster','gross_revenue']].groupby('cluster').sum().sort_values(by='gross_revenue', ascending=False).reset_index()
+    fig.update_layout(
+        xaxis_title=x.capitalize(),
+        yaxis_title=y.capitalize(),
+        xaxis=dict(showgrid=False),
+        yaxis=dict(showgrid=False),
+        showlegend=False
+    )
     
-    rev_chart = px.bar(revenue, 
-                       x='cluster',
-                       y='gross_revenue',
-                       color='gross_revenue',
-                       text_auto='.2s',
-                       title='Accumulative Revenue by Cluster')
-    with c1:
-        st.plotly_chart(rev_chart)
+    return fig
 
-    # Qty of Customers
-    qtyc = df[['cluster','customer_id']].groupby('cluster').count().sort_values(by='customer_id', ascending=False).reset_index()
+def filtered_section(df: pd.DataFrame, df_oml: pd.DataFrame) -> None:
+    """Display filtered cluster information and related visualizations."""
+    st.header("Filtered Information")
+    
+    selected_clusters = st.multiselect(
+        "Select clusters to analyze:",
+        CLUSTER_NAMES,
+        default='Insiders'
+    )
+    
+    if not selected_clusters:
+        st.warning("Please select at least one cluster")
+        return
 
-    qty_chart = px.bar(qtyc, 
-                       x='cluster',
-                       y='customer_id',
-                       color='customer_id',
-                       text_auto='.2s',
-                       title='Quantity of Customers by Cluster')
-    with c2:
-        st.plotly_chart(qty_chart)
+    df_filtered = df[df['cluster'].isin(selected_clusters)]
+    display_main_metrics(df_filtered)
 
+    df_oml_filtered = df_oml[df_oml['cluster'].isin(selected_clusters)] # to be used for products and country
 
+    # Create visualization columns
+    col1, col2, col3, col4 = st.columns(4)
+    
+    # Revenue by Month
+    rev_month = df_filtered.groupby('month')['gross_revenue'].sum().reset_index()
+    fig = px.line(rev_month, x='month', y='gross_revenue', title='Gross Revenue per Month')
+    col1.plotly_chart(fig, use_container_width=True)
+
+    # Revenue by Weekday
+    df_filtered['week_day'] = df_filtered['week_day'].map(WEEKDAY_MAP)
+    rev_day = df_filtered.groupby('week_day')['gross_revenue'].sum().sort_values(ascending=False).reset_index()
+    fig = create_bar_chart(rev_day, 'week_day', 'gross_revenue', 'Gross Revenue by Week Day')
+    col2.plotly_chart(fig, use_container_width=True)
+
+    # Top Products
+    df_oml["stock_code"] = df_oml["stock_code"].astype(str) # Just for labels appear correclty
+    top_products = df_oml_filtered.groupby("stock_code")["quantity"].sum().nlargest(10).reset_index()
+    fig = create_bar_chart(top_products, 'stock_code', 'quantity', 'Top 10 Best Seller Items')
+    fig.update_layout(xaxis=dict(type="category")) # set the x axis as category
+    col3.plotly_chart(fig, use_container_width=True)
+
+    # Country
+    country = df_oml_filtered.groupby("country")["customer_id"].nunique().sort_values(ascending=False).reset_index()
+    fig = px.bar(country, x="country", y="customer_id", color="customer_id", text_auto=".2s", title="Qty of Customers by Country")
+    fig.update_layout(xaxis_title="Country", yaxis_title="Quantity of Customers", xaxis=dict(showgrid=False), yaxis=dict(showgrid=False))
+    col4.plotly_chart(fig, use_container_width=True)
+
+def main() -> None:
+    """Main function to orchestrate the dashboard layout."""
+    st.title('All in One Place: High Value Customer Identification')
+    st.write('This page shows summarized cluster information from K-Means analysis.')
     st.divider()
 
-     ##### FILTER #####
+    # Load data
+    df, df_oml = get_data('./data/processed/ml_cluster.csv', './data/processed/df_oml.csv')
 
-    clusters = st.multiselect(
-                "Select the Group to Summarize the information:",
-                ['Insiders', 'Champions', 'Loyalists', 'Big Spenders', 'Potential Loyalists', 'New Customers', 'Promising',
-                'Active Customers', 'High Value Newcomers', 'Rising Stars', 'Occasional Buyers', 'Need Attention',
-                'About to Sleep', 'Hibernating', 'At Risk', 'Lost Champions', 'Price Sensitive', 'One-Timers',
-                'Bargain Hunters', 'Low Value Customers', 'Churned', 'Ghosts'], default='Insiders'
-                )
+    # Main metrics section
+    st.header('General Customer Overview')
+    display_main_metrics(df)
+    st.markdown("<br>"*3, unsafe_allow_html=True)  # Add vertical spacing
+
+    # Treemap visualization
+    st.plotly_chart(create_treemap(df), use_container_width=True)
+
+    # Comparative analysis section
+    st.header('Cluster Comparison')
+    col1, col2 = st.columns(2)
     
-    cl_selected = df['cluster'].isin(clusters)
-    df_cl = df.loc[cl_selected]
-
-
-    # Customer Statistics
-    qtc  = df_cl['customer_id'].count()
-    rev  = df_cl['gross_revenue'].sum()
-    rec  = df_cl['recency_days'].mean()
-    freq = df_cl['frequency'].mean()
-    inv  = df_cl['qty_invoices'].sum()
-    prod = df_cl['qty_prod_purchased'].sum()
-
-
-    col1, col2, col3, col4, col5, col6 = st.columns(6)
+    revenue_data = df.groupby('cluster')['gross_revenue'].sum().sort_values(ascending=False).reset_index()
+    col1.plotly_chart(
+        create_bar_chart(revenue_data, 'cluster', 'gross_revenue', 'Revenue by Cluster'),
+        use_container_width=True
+    )
     
-    col1.metric(label="Quantity of Customers", value=qtc)
-    col2.metric(label="Gross Revenue", value=f"$ {rev:,.2f}")
-    col3.metric(label="Avg Recency", value=f" {rec:,.2f}")
-    col4.metric(label="Avg Frequency", value=f"{freq:,.2f}")
-    col5.metric(label="Qty of Invoices", value=f"{inv:,.2f}")
-    col6.metric(label="Qty of Products", value=f"{prod:,.2f}")
+    customer_data = df.groupby('cluster')['customer_id'].count().sort_values(ascending=False).reset_index()
+    col2.plotly_chart(
+        create_bar_chart(customer_data, 'cluster', 'customer_id', 'Customers by Cluster'),
+        use_container_width=True
+    )
 
-    st.divider()
-
-    c1, c2 = st.columns((1,1))
-
-    #### Gross Revenue per Month ####
-
-    rev_m = df_cl[['gross_revenue','month']].groupby('month').sum().reset_index()
-
-    rev_month = px.line(rev_m, 
-                       x='month',
-                       y='gross_revenue',
-                       title='Gross Revenue per Month')
-  
-    with c1:
-        st.plotly_chart(rev_month)
-
-    #### Gross Revenue per Week Day ####
-
-    rev_d = df_cl[['gross_revenue','week_day']].groupby('week_day').sum().reset_index()
-
-    rev_day = px.line(rev_d, 
-                       x='week_day',
-                       y='gross_revenue',
-                       title='Gross Revenue per Day of Week')
-  
-    with c2:
-        st.plotly_chart(rev_day)
-
-
-    st.write(df_cl.head())
-    return (df)
-
-
-
-
-
-
-# ETL
+    # Filtered analysis section
+    filtered_section(df, df_oml)
 
 if __name__ == '__main__':
-
-    # Data Extraction
-    path = './data/processed/ml_cluster.csv'
-    df = get_data(path)
-
-    # Load
-    eda(df)
+    main()
+    # Hide default Streamlit elements
+    st.markdown("""<style> #MainMenu, footer, header {visibility: hidden;} </style>""", unsafe_allow_html=True)
