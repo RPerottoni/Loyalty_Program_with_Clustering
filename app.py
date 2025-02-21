@@ -206,6 +206,8 @@ def filtered_section(df: pd.DataFrame, df_oml: pd.DataFrame) -> None:
     fig.update_layout(xaxis_title="Country", yaxis_title="Quantity of Customers", xaxis=dict(showgrid=False), yaxis=dict(showgrid=False))
     col4.plotly_chart(fig, use_container_width=True)
 
+    st.dataframe(df_filtered, use_container_width=True)
+
 def main() -> None:
     """Main function to orchestrate the dashboard layout."""
     st.title('🥇 Insiders: High Value Customer Identification')
@@ -264,6 +266,8 @@ def main() -> None:
     st.write('Select the clusters by the filter on the side bar.')
     
     filtered_section(df, df_oml)
+
+    
 
 if __name__ == '__main__':
     main()
