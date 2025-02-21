@@ -35,6 +35,35 @@ TREEMAP_COLORS = {
     'base': "#D3D3D3"
 }
 
+TREEMAP_LEGEND = {
+    'Insiders': 'VIP customers, extremely loyal and high-value',
+    'Champions': 'Buy very frequently and recently',
+    'Loyalists': 'Loyal customers who make regular purchases',
+    'Big Spenders': 'Spend a lot of money, but may not buy as frequently',
+    'Potential Loyalists': 'Recent and frequent buyers, but not spending much yet',
+    'New Customers': 'New, promising buyers',
+    'Promising': 'Made a few purchases, but recent ones',
+    'Active Customers': 'Buy with reasonable frequency',
+    'High Value Newcomers': 'New customers who spent a lot right from the start',
+    'Rising Stars': 'Recently increased frequency or average spend',
+    'Occasional Buyers': 'Buy sporadically, but still active',
+    'Need Attention': 'Regular customers who have started to reduce their purchases',
+    'About to Sleep': 'Old customers who are disappearing',
+    'Hibernating': 'Haven’t bought in a long time, but were once good customers',
+    'At Risk': 'High-value customers from the past, but inactive now',
+    'Lost Champions': 'Used to be VIPs, but stopped buying',
+    'Price Sensitive': 'Buy, but only when there are discounts',
+    'One-Timers': 'Bought only once and never returned',
+    'Bargain Hunters': 'Only look for discounts, no loyalty',
+    'Low Value Customers': 'Buy very little and rarely',
+    'Churned': 'Completely lost customers',
+    'Ghosts': 'Inactive for so long that they are difficult to re-engage'
+}
+
+
+legend_df = pd.DataFrame(list(TREEMAP_LEGEND.items()), columns=['Cluster ID', 'Description'])
+
+
 # Configure page settings
 st.set_page_config(
     page_title="Insiders Dashboard - ML",
@@ -52,12 +81,12 @@ def get_data(path: str, path_o: str) -> tuple[pd.DataFrame, pd.DataFrame]:
 def display_main_metrics(df: pd.DataFrame) -> None:
     """Display key customer metrics in a 6-column layout."""
     metrics = {
-        'Customers': df['customer_id'].count(),
-        'Revenue': df['gross_revenue'].sum(),
-        'Avg Recency': df['recency_days'].mean(),
-        'Avg Frequency': df['frequency'].mean(),
-        'Invoices': df['qty_invoices'].sum(),
-        'Products': df['qty_prod_purchased'].sum()
+        '🧑‍🤝‍🧑 Customers': df['customer_id'].count(),
+        '💰 Revenue': df['gross_revenue'].sum(),
+        '📈 Avg Recency': df['recency_days'].mean(),
+        '📈 Avg Frequency': df['frequency'].mean(),
+        '📝 Invoices': df['qty_invoices'].sum(),
+        '🛍️ Products': df['qty_prod_purchased'].sum()
     }
 
     cols = st.columns(6)
@@ -70,24 +99,24 @@ def create_treemap(df: pd.DataFrame) -> px.treemap:
     """Create cluster distribution treemap with highlighted Insiders cluster."""
     df_treemap = df.groupby('cluster')['customer_id'].count().reset_index()
     
-    color_map = {
-        cluster: TREEMAP_COLORS['highlight'] if cluster == "Insiders" else TREEMAP_COLORS['base']
-        for cluster in df_treemap['cluster']
-    }
+#    color_map = {
+#        cluster: TREEMAP_COLORS['highlight'] if cluster == "Insiders" else TREEMAP_COLORS['base']
+#        for cluster in df_treemap['cluster']
+#    }
 
     fig = px.treemap(
         df_treemap,
         path=['cluster'],
         values='customer_id',
         color='cluster',
-        color_discrete_map=color_map,
+        color_discrete_sequence=px.colors.qualitative.Alphabet,
         width=1100,
         height=900
     )
 
     fig.update_layout(
         title=dict(text='Segment Distribution', font=dict(size=30)),
-        title_x=0.5,
+        title_x=0.35,
         margin=dict(t=50, l=25, r=25, b=25)
     )
     
@@ -119,19 +148,31 @@ def create_bar_chart(df: pd.DataFrame, x: str, y: str, title: str) -> px.bar:
     
     return fig
 
+
+
 def filtered_section(df: pd.DataFrame, df_oml: pd.DataFrame) -> None:
     """Display filtered cluster information and related visualizations."""
-    st.header("Filtered Information")
+
+    with st.sidebar:
+        st.image("reports/figures/logo.png")
+        st.title("An online retail store!")
+         
+        selected_clusters = st.multiselect(
+            "Select clusters to analyze:",
+            CLUSTER_NAMES,
+            default='Insiders'
+        )
     
-    selected_clusters = st.multiselect(
-        "Select clusters to analyze:",
-        CLUSTER_NAMES,
-        default='Insiders'
-    )
-    
-    if not selected_clusters:
-        st.warning("Please select at least one cluster")
-        return
+        if not selected_clusters:
+            st.warning("Please select at least one cluster")
+            return
+        
+    # Printing the selected clusters
+    st.subheader('Active Clusters:')
+    for idx, cluster in enumerate(selected_clusters, 1):
+        st.markdown(f"🏷️ **{idx}.** {cluster}")
+
+    st.markdown("<br>""<br>""<br>", unsafe_allow_html=True)
 
     df_filtered = df[df['cluster'].isin(selected_clusters)]
     display_main_metrics(df_filtered)
@@ -160,15 +201,28 @@ def filtered_section(df: pd.DataFrame, df_oml: pd.DataFrame) -> None:
     col3.plotly_chart(fig, use_container_width=True)
 
     # Country
-    country = df_oml_filtered.groupby("country")["customer_id"].nunique().sort_values(ascending=False).reset_index()
+    country = df_oml_filtered.groupby("country")["customer_id"].nunique().nlargest(5).sort_values(ascending=False).reset_index()
     fig = px.bar(country, x="country", y="customer_id", color="customer_id", text_auto=".2s", title="Qty of Customers by Country")
     fig.update_layout(xaxis_title="Country", yaxis_title="Quantity of Customers", xaxis=dict(showgrid=False), yaxis=dict(showgrid=False))
     col4.plotly_chart(fig, use_container_width=True)
 
 def main() -> None:
     """Main function to orchestrate the dashboard layout."""
-    st.title('All in One Place: High Value Customer Identification')
-    st.write('This page shows summarized cluster information from K-Means analysis.')
+    st.title('🥇 Insiders: High Value Customer Identification')
+    st.subheader('Dashboard for Customer Segmentation Analysis')
+    st.write("""
+        This dashboard provides insights into customer clusters identified by a K-Means model. 
+        It includes high-level metrics, visualizations, and filtered views of customer segments.
+    """)
+    st.write("### Key Features:")
+    st.write("""
+        - Overall customer statistics
+        - Cluster distribution treemap
+        - Revenue and customer quantity analysis
+        - Interactive cluster filtering
+        - Time-based and geographical analysis
+    """)
+
     st.divider()
 
     # Load data
@@ -180,10 +234,13 @@ def main() -> None:
     st.markdown("<br>"*3, unsafe_allow_html=True)  # Add vertical spacing
 
     # Treemap visualization
-    st.plotly_chart(create_treemap(df), use_container_width=True)
+    col1, col2 = st.columns(2)
+    col1.plotly_chart(create_treemap(df), use_container_width=True)
+    with col2:
+        st.markdown("<br>""<br>""<br>", unsafe_allow_html=True)
+        st.table(legend_df)
 
     # Comparative analysis section
-    st.header('Cluster Comparison')
     col1, col2 = st.columns(2)
     
     revenue_data = df.groupby('cluster')['gross_revenue'].sum().sort_values(ascending=False).reset_index()
@@ -198,7 +255,14 @@ def main() -> None:
         use_container_width=True
     )
 
+    st.markdown("<br>""<br>""<br>", unsafe_allow_html=True)
+    
+    st.divider()
+
     # Filtered analysis section
+    st.header('Cluster Analysis')
+    st.write('Select the clusters by the filter on the side bar.')
+    
     filtered_section(df, df_oml)
 
 if __name__ == '__main__':
