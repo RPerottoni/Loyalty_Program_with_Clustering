@@ -94,51 +94,77 @@ In this step, I created additional features to obtain more detailed and accurate
 - **Month mos frequent by customer**; Based on the date, extract the month  and calculate the mode by customer;
 - **Year week most frequent by customer**; Based on the date, extract the year week and calculate the mode by customer;
 
-## 2.4 Calculus of RFM Matrix
+## 2.4 Approaches for Customer Segmentation
 
-The RFM Matrix is calculated by given scores to each customer, based into their performance while analysing the following characteristics:
-
-- **Recency**: the lower the better. 
-- **Frequency** : the higher the better.
-- **Monetary**: the higher the better.
-
-I have assigned scores from 1 to 5 using a pandas function called 'qcut.' This function divides the data into specified quantiles (equal-sized intervals), sorting the values 
-in ascending order, and then assigns labels based on the quantile each value falls into.
-And thereafter, a new column named as RFM Score will be created, and I am going to concatenate the calculated scores for recency, frequency and monetary to define the 
-final score for each customer.
-
-With all calculations finished, it is time to allocate each customer into a group, according to its final score.
-The segments to allocate the customers would be:
-
-- **Champions**: If the scores for recency falls into 4 or 5 , frequency falls into 4 or 5 and monetary is equal to 5;
-- **Loyal Customers**: If the recency score falls between 4 or 5, frequency falls between 4 or 5, and monetary falls between 4 or 5.
-- **Potential Loyalists**: If the recency score falls between 4 or 5, frequency falls between 3 or 5, and monetary falls between 3 or 5.
-- **New Customers**: If the recency score falls between 4 or 5, frequency falls between 1 or 2, and monetary falls between 1 or 5.
-- **Promising**: If the recency score falls between 3 or 5, frequency falls between 2 or 5, and monetary falls between 1 or 3.
-- **Need Attention**: If the recency score falls between 3 or 5, frequency falls between 3 or 5, and monetary falls between 4 or 5.
-- **About to Sleep**: If the recency score falls between 1 or 3, frequency falls between 2 or 5, and monetary falls between 1 or 3.
-- **At Risk**: If the recency score falls between 2 or 3, frequency falls between 4 or 5, and monetary falls between 4 or 5.
-- **Can't Lose**: If the recency score falls between 1 or 2, frequency falls between 3 or 5, and monetary falls between 3 or 5.
-- **Hibernating**: If the recency score falls between 1 or 3, frequency falls between 1 or 3, and monetary falls between 1 or 5.
-- **Lost**: If the recency, frequency, and monetary scores are all equal to 1.
+I have developed this project using two different approaches.
 
 
-After the calculations, all customers have been assigned to their respective groups, and the results are displayed in the images below.
+### 2.4.1 RFM Matrix
 
-![image](reports/figures/rfm_matrix.png)
-![image](reports/figures/rfm_table.png)
+The entire project development and calculation of the RFM Matrix are explained in my Medium post.
 
-# 3 - Conclusions
 
-The solution has been developed using a tool called the RFM Matrix, which has been instrumental in addressing this business problem. It has enabled the identification of the group of customers eligible to join the Insider Program and has also highlighted areas for improvement that the company can address to increase its revenue.
+You can find a detailed explanation in my Medium post at the link below.
+https://medium.com/@perottoni.ricardo/rfm-analysis-applied-to-a-customer-segmentation-ada20d8e046e
 
-### Characteristics of the Insider Group
 
-The Insider Group consists of customers selected to participate in the campaign. These customers are classified as Champions within the project. This group comprises 42 customers, representing approximately 1% of the total customer base. Despite its small size, this group accounts for 20% of the gross revenue and purchases significantly more products than any other group.
+### 2.4.2 K-Means
 
-With these insights, the company can design a highly personalized program for these customers, enhancing their satisfaction and motivating them to continue shopping with us.
+The entire project development and the machine learning application is explained in my post on medium.
 
-# 4 - Next Steps
 
-The next step is to provide a solution using machine learning models. Once completed, this README will be updated to include the results of the machine learning approach and a comparison between the two methods.
+You can find a detailed explanation in my Medium post at the link below.
+https://medium.com/@perottoni.ricardo/customer-segmentation-with-machine-learning-algorithm-5e6c3328bbeb
+
+# 3 - Results
+
+I have built a interactive dashboard that can be accessed following the link below.
+
+https://rp00mlclustering.streamlit.app/
+
+
+I have successfully solved the business problem with both tools: **RFM Matrix** and also by applying **Machine Learning**.
+
+While the result with Machine Learning is more accurate, the RFM Matrix is still very powerful due to its simplicity.
+
+## 3.1 - K-Means
+
+By applying K-Means, I have successfully identified 31 customers to join the **Insiders** program. These 31 customers represents more than 20% of the companys annual revenue and they also bought a huge quantity of products.
+
+![image](reports/figures/dashboard_ml.png)
+
+## 3.2 - RFM Matrix
+
+The RFM Matrix is a much simpler tool compared to Machine Learning. However, by analyzing its results, we can conclude that, despite its simplicity, it is still capable of delivering strong results. Where applying it, I have successfully identified 42 customers, that represents also around 20% of the company revenue.
+
+![image](reports/figures/dashboard_rfm.png)
+
+
+# 4 - Conclusions
+
+I have successfully selected the customers to join the **Insiders** program either with RFM Matrix or K-Means.
+
+By applying K-Means, I got a more accurate result but the RFM also had a good performance and does not require advanced knowledge, what is an advantage.
+
+Besides that, both tools allowed us to group customers into various segments, providing valuable insights and numerous opportunities for improvement, such as:
+
+*  The company can identify and target potential customers to increase their purchases.
+* The company can optimize strategies for best-selling and low-performing items.
+* The company can determine the best timing for promotions and analyze business seasonality in depth.
+* New project opportunities can be identified to further increase revenue.
+* The possibilities for leveraging this information are only limited by creativity.
+
+# 5. Technologies
+
+[![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)](https://www.python.org/)
+[![Jupyter Notebook](https://img.shields.io/badge/jupyter-%23FA0F00.svg?style=for-the-badge&logo=jupyter&logoColor=white)](https://jupyter.org/)
+[![NumPy](https://img.shields.io/badge/numpy-%23013243.svg?style=for-the-badge&logo=numpy&logoColor=white)](https://numpy.org/)
+[![Pandas](https://img.shields.io/badge/pandas-%23150458.svg?style=for-the-badge&logo=pandas&logoColor=white)](https://pandas.pydata.org/)
+[![Scikit-Learn](https://img.shields.io/badge/scikit--learn-%23F7931E.svg?style=for-the-badge&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-FF4B4B?style=for-the-badge&logo=streamlit&logoColor=white)](https://streamlit.io/)
+[![Plotly](https://img.shields.io/badge/Plotly-239EDA?style=for-the-badge&logo=plotly&logoColor=white)](https://plotly.com/)
+
+# AUTHOR
+
+### Ricardo Perottoni
 
