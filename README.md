@@ -96,6 +96,8 @@ Two approaches were used for customer segmentation:
 
 ## 3. 📊 Results
 
+Explore the results by checking the interactive **[Streamlit Dashboard](https://rp00mlclustering.streamlit.app/)**
+
 ### 3.1 🤖 Customer Segmentation with K-Means
 
 Using K-Means, customers were segmented into **22 groups**. This number was optimized based on **silhouette score**.  
